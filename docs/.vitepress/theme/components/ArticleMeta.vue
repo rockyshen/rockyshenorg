@@ -18,24 +18,33 @@
   const pageHits = ref<number>(0);
   const isPageHitsFetched = ref<boolean>(false);
 
-  // 查询阅读量功能
-  const fetchPageHits = async () => {
-    try {
-      const response = await fetch(
-        // `https://st.luolei.org/ga?page=${route.path}`
-        `http://47.101.200.22:18080/ga?page=${route.path}`
-      );
-      const { data } = await response.json();
-      const currentPageHit = data.find(
-        (item: any) => item.page === `${route.path}`
-      );
+  // 从 localStorage 获取文章阅读量
+  const getStorageKey = () => `article_hits_${route.path}`;
 
-      if (currentPageHit) {
-        pageHits.value = currentPageHit.hit;
+  const fetchPageHits = () => {
+    try {
+      const storageKey = getStorageKey();
+      const stored = localStorage.getItem(storageKey);
+
+      if (stored) {
+        const data = JSON.parse(stored);
+        pageHits.value = data.hits || 0;
+        // 每次访问增加阅读量
+        data.hits += 1;
+        localStorage.setItem(storageKey, JSON.stringify(data));
+        pageHits.value = data.hits;
+      } else {
+        // 首次访问，初始阅读量为 0
+        const newData = { hits: 0, firstVisit: Date.now() };
+        localStorage.setItem(storageKey, JSON.stringify(newData));
+        pageHits.value = 0;
       }
       isPageHitsFetched.value = true;
     } catch (error) {
       console.error("Error fetching page hits:", error);
+      // 如果 localStorage 不可用，给一个默认值
+      pageHits.value = 0;
+      isPageHitsFetched.value = true;
     }
   };
 
