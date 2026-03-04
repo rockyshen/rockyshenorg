@@ -28,11 +28,8 @@
 
       if (stored) {
         const data = JSON.parse(stored);
+        // 只显示当前阅读量，不增加
         pageHits.value = data.hits || 0;
-        // 每次访问增加阅读量
-        data.hits += 1;
-        localStorage.setItem(storageKey, JSON.stringify(data));
-        pageHits.value = data.hits;
       } else {
         // 首次访问，初始阅读量为 0
         const newData = { hits: 0, firstVisit: Date.now() };
@@ -48,8 +45,25 @@
     }
   };
 
+  // 增加阅读量（只在页面真正加载时调用一次）
+  const incrementPageHits = () => {
+    try {
+      const storageKey = getStorageKey();
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        const data = JSON.parse(stored);
+        data.hits += 1;
+        localStorage.setItem(storageKey, JSON.stringify(data));
+        pageHits.value = data.hits;
+      }
+    } catch (error) {
+      console.error("Error incrementing page hits:", error);
+    }
+  };
+
   onMounted(() => {
     fetchPageHits();
+    incrementPageHits();
   });
 
   watch(
@@ -57,6 +71,7 @@
     () => {
       isPageHitsFetched.value = false;
       fetchPageHits();
+      incrementPageHits();
     }
   );
 </script>

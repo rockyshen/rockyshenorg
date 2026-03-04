@@ -58,9 +58,29 @@ const posts = ref(
     cover: post.cover,
     date: post.date,
     categories: post.categories || [],
-    hit: 0, // 添加 hit 字段并初始化为 0
+    hit: 0, // 初始化为 0，在 onMounted 中更新
   })),
 );
+
+// 从 localStorage 获取文章阅读量
+const getStorageKey = (url: string) => `article_hits_${url}`;
+
+// 从 localStorage 获取文章阅读量（只读，不增加）
+const getArticleHit = (url: string): number => {
+  try {
+    const storageKey = getStorageKey(url);
+    const stored = localStorage.getItem(storageKey);
+    if (stored) {
+      const data = JSON.parse(stored);
+      return data.hits || 0;
+    }
+    // 如果没有存储过，返回 0
+    return 0;
+  } catch (error) {
+    console.error("Error getting article hit:", error);
+    return 0;
+  }
+};
 
 const filteredPosts = computed(() => {
   if (currentCategory.value === "hot" && isArticleListHitsFetched.value) {
@@ -100,7 +120,7 @@ const scrollToTop = () => {
 };
 
 const sortPostsByHit = (posts) => {
-  return posts.filter((post) => post.hit > 0).sort((a, b) => b.hit - a.hit); // 根据 hit 字段大小从大到小排列
+  return [...posts].sort((a, b) => b.hit - a.hit); // 根据 hit 字段大小从大到小排列
 };
 
 const changePage = (page: number) => {
@@ -126,27 +146,6 @@ const nextPage = () => {
   }
 };
 
-// 获取所有文章的浏览量
-const fetchArticleListHits = async () => {
-  try {
-    // const response = await fetch(`https://st.luolei.org/ga`);
-    const response = await fetch(`http://47.101.200.22:18080/ga`);
-    console.log(response)
-    const { data } = await response.json();
-    data.forEach((item) => {
-      const post = posts.value.find((p) => p.url === item.page);
-      if (post) {
-        console.log(item.hit)
-        post.hit = item.hit;
-      }
-    });
-    // 设置 isArticleListHitsFetched 为 true
-    isArticleListHitsFetched.value = true;
-  } catch (error) {
-    console.error("Error fetching page hits:", error);
-  }
-};
-
 watch(
   location,
   () => {
@@ -165,7 +164,11 @@ watch(
 onMounted(() => {
   getWindowSize();
   window.addEventListener("resize", getWindowSize);
-  fetchArticleListHits();
+  // 初始化所有文章的阅读量（只读取，不增加）
+  posts.value.forEach((post) => {
+    post.hit = getArticleHit(post.url);
+  });
+  isArticleListHitsFetched.value = true;
 });
 </script>
 
