@@ -11,6 +11,22 @@ pnpm run docs:build   # Build for production
 pnpm run docs:preview # Preview production build
 ```
 
+## Deployment
+
+This blog is deployed on a **Tencent Cloud server** with Nginx.
+
+### Deploy Steps
+
+```bash
+# 1. Build the project
+pnpm run docs:build
+
+# 2. Done! Build output is in docs/.vitepress/dist/
+# Nginx is already configured to serve this directory
+```
+
+That's it! After running `pnpm run docs:build`, the site is immediately accessible via Nginx.
+
 ## Architecture
 
 This is a personal blog built with **VitePress** (Vue 3 + Markdown-based SSG). The site uses a custom theme that extends VitePress's default theme.
@@ -50,7 +66,7 @@ docs/
 
 - **Tailwind CSS**: Used for utility classes, configured in `postcss.config.js`
 - **Prettier**: Code formatting with Tailwind plugin
-- **Deployment**: Built with Jenkins, deployed to Tencent Cloud server
+- **Nginx**: Serves `docs/.vitepress/dist/` directly on Tencent Cloud server
 
 ## Content Creation
 
